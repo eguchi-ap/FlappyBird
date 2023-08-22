@@ -12,6 +12,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var scrollNode: SKNode!
     var wallNode: SKNode!
     var bird: SKSpriteNode!
+    var ballNode: SKNode!
     
     // 当たり判定
     let birdCategory: UInt32 = 1 << 0
@@ -24,6 +25,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var scoreLabelNode: SKLabelNode!
     var bestScoreLabelNode: SKLabelNode!
     let userDefaults: UserDefaults = UserDefaults.standard
+    
+    // アイテムスコア
+    var itemScore = 0
+    var itemScoreLabelNode: SKLabelNode!
     
     override func didMove(to view: SKView) {
         
@@ -38,10 +43,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         wallNode = SKNode()
         scrollNode.addChild(wallNode)
         
+        ballNode = SKNode()
+        scrollNode.addChild(ballNode)
+        
         setupGround()
         setupCloud()
         setupWall()
         setupBird()
+        setupBall()
         
         setupScoreLabel()
     }
@@ -215,6 +224,38 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bird.run(flap)
         
         addChild(bird)
+    }
+    
+    func setupBall() {
+        let ballTexture = SKTexture(imageNamed: "ball")
+        ballTexture.filteringMode = .linear
+        
+        let movingHeightDistance = self.frame.size.height + ballTexture.size().height
+        let movingWidthDistance = self.frame.size.width + ballTexture.size().width
+
+        let moveWall = SKAction.moveBy(x: -movingWidthDistance, y: -movingHeightDistance, duration: 5)
+        let removeWall = SKAction.removeFromParent()
+        let ballAnimation = SKAction.sequence([moveWall, removeWall])
+
+        let ballWallAnimation = SKAction.run({
+            
+            let random = CGFloat.random(in: 0.5...0.9)
+
+            let ball = SKSpriteNode(texture: ballTexture)
+
+            ball.position = CGPoint(x: self.frame.size.width * random, y: self.frame.size.height)
+
+            ball.run(ballAnimation)
+
+            self.ballNode.addChild(ball)
+        })
+        
+        let waitAnimation = SKAction.wait(forDuration: 1)
+        let repeatForeverAnimation = SKAction.repeatForever(SKAction.sequence([ballWallAnimation, waitAnimation]))
+
+        ballNode.zPosition = -30
+        
+        ballNode.run(repeatForeverAnimation)
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
